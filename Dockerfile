@@ -12,3 +12,5 @@ EXPOSE 8080
 
 CMD ["java", "-jar", "target/securedocs-0.0.1-SNAPSHOT.jar"]
 RUN export KEY=AIzaSyAwW5MAaZnlKbS1Dco56phNfzyCdzHtKqs
+
+mongodb://root:tiger@localhost:27017/admin?authSource=admin&directConnection=true
