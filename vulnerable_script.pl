@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 asf
-
+mn
 my $user_input = $ARGV[0];
 nigga
 # Vulnerable: user input is passed directly to system()
