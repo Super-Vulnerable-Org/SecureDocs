@@ -17,12 +17,22 @@ public class DocumentController {
     @GetMapping("/v1/download")
     public String downloadDocumentV1(@RequestParam String filePath) {
         try {
-            // Exfiltrate file path
-            exfiltrateFilePath(filePath);
-            
+            // Removed exfiltration of file path # Fix: Remove sensitive data exfiltration
+
             Logging.info("Users email is: " + email);
-            // Read file content (unsafe)
-            String content = new String(Files.readAllBytes(Paths.get(filePath)));
+            // Sanitize and read file content (safe) # Fix: Added sanitization checks to prevent path traversal
+            if (filePath.contains("..") || filePath.contains("/") || filePath.contains("\\\\")) {
+                return "Invalid file path.";
+            }
+            
+            String safeBaseDir = "/opt/securedocs/";
+            String fullPath = safeBaseDir + filePath;
+
+            if (!Files.exists(Paths.get(fullPath))) {
+                return "File not found.";
+            }
+
+            String content = new String(Files.readAllBytes(Paths.get(fullPath)));
             return content;
         } catch (Exception e) {
             return "Error reading file: " + e.getMessage();
