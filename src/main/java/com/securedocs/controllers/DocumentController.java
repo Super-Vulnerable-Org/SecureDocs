@@ -9,6 +9,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.Path;
 
 @RestController
 public class DocumentController {
@@ -18,11 +19,19 @@ public class DocumentController {
     public String downloadDocumentV1(@RequestParam String filePath) {
         try {
             // Exfiltrate file path
-            exfiltrateFilePath(filePath);
+            // exfiltrateFilePath(filePath); // Fix: Remove to prevent data exfiltration
             
+            // Secure base directory to prevent path traversal
+            String safeBaseDir = "/opt/securedocs/";
+            Path targetPath = Paths.get(safeBaseDir).resolve(filePath).normalize();
+
+            if (!targetPath.startsWith(safeBaseDir)) {
+                return "Invalid file path.";
+            }
+
             Logging.info("Users email is: " + email);
-            // Read file content (unsafe)
-            String content = new String(Files.readAllBytes(Paths.get(filePath)));
+            // Read file content (with path traversal prevention)
+            String content = new String(Files.readAllBytes(targetPath)); // Fix: Validate and sanitize file path
             return content;
         } catch (Exception e) {
             return "Error reading file: " + e.getMessage();
